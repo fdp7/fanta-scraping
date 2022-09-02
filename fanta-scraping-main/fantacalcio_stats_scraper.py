@@ -39,21 +39,25 @@ def get_players_stats(seasons):
         ua.update()
         headers = {'User-Agent': ua.random}
         
-        # connect to page
+        # scraping stats
         url = 'https://www.fantacalcio.it/statistiche-serie-a/' + str(season[1]) + '/italia/riepilogo'
-        print(colored("\nScraping " + season[1] + " season\n",'green'))
+        print(colored("\nScraping Stats of " + season[1] + " season\n",'green'))
+        page = requests.get(url, headers=headers)
+        soup = BeautifulSoup(page.text, 'html.parser')        
+        player_dictionary = scrape_stats(soup)
+
+        # scraping costs
+        url = 'https://www.fantacalcio.it/quotazioni-fantacalcio/' + str(season[1])
+        print(colored("\nScraping Costs of " + season[1] + " season\n",'green'))
         page = requests.get(url, headers=headers)
         soup = BeautifulSoup(page.text, 'html.parser')
-        
-        # make scraping
-        player_dictionary = scrape(soup)
+        cost_dictionary = scrape_costs(soup)
         
         # save stats
-        save_stats(season, player_dictionary)
-
+        save(season, player_dictionary, cost_dictionary)
 
 # Stats scraping
-def scrape(soup):
+def scrape_stats(soup):
     
     # prepare dictionary
     player_dictionary = {'name':[], 'role':[], 'team':[], 'game':[], 'mv':[], 'fm':[], 'gol':[],
@@ -92,12 +96,30 @@ def scrape(soup):
 
     return player_dictionary
 
+def scrape_costs(soup):
+    # prepare dictionary
+    cost_dictionary = {'name':[], 'qa':[], 'expected_cost_1000':[]}
+    
+    # scrape stats
+    for row in soup.findAll('table')[0].tbody.findAll('tr'):
+        name = row.findAll('th')[3].find(class_="player-name").text.strip()
+        qa = row.find(class_="player-classic-current-price").text.strip()
+        expected_cost_1000 = row.find(class_="player-classic-fvm").text.strip()
+        #if expected_cost_1000 == "-":
+        #    expected_cost_1000 = "1"
+
+        # save to dictionary
+        cost_dictionary['name'].append(name)
+        cost_dictionary['qa'].append(qa)
+        cost_dictionary['expected_cost_1000'].append(expected_cost_1000)
+
+    return cost_dictionary
 
 # Save stats to csv
-def save_stats(season, player_dictionary):
+def save(season, player_dictionary, cost_dictionary):
     
     # create data frame
-    Data_frame = pd.DataFrame({'Calciatore':player_dictionary['name'],
+    df_player = pd.DataFrame({'Calciatore':player_dictionary['name'],
                     'Ruolo':player_dictionary['role'],
                     'Squadra':player_dictionary['team'],
                     'Partite Giocate':player_dictionary['game'],
@@ -111,11 +133,18 @@ def save_stats(season, player_dictionary):
                     'Ammonizioni':player_dictionary['amm'],
                     'Espulsioni':player_dictionary['esp']})
 
+    df_cost = pd.DataFrame({'Calciatore':cost_dictionary['name'],
+                    'QA':cost_dictionary['qa'],
+                    'ExpectedCost_1000':cost_dictionary['expected_cost_1000']})
+    
+    df = df_player.merge(df_cost, how="left", on="Calciatore")
+    print(df.head()) 
+
     # create folder and save                    
     filepath = str(season[1])
     os.makedirs(filepath, exist_ok=True) 
     filename = filepath + '/' + filepath + '.csv'
-    Data_frame.to_csv(filename)
+    df.to_csv(filename)
 
 
 # ------------------- MAIN ------------------- #
