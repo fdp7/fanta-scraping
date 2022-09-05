@@ -1,3 +1,4 @@
 # fanta-scraping
-Tool to scrape fantacalcio.it and retrieve the players' grades for each team, for each match, for each season.
+Tool to scrape fantacalcio.it and retrieve the players' stats.
+Then an optimization algorithm selects best team for fanta market
 Just run the fucking code
