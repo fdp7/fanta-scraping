@@ -1,12 +1,12 @@
-from this import d
 import pandas as pd
 import pulp
 import os
  
 # creating a data frame
-season_0 = "2022-23/2022-23.csv"
-season_1 = "2021-22/2021-22.csv"
-season_2 = "2020-21/2020-21.csv"
+route = "/home/federico/fanta-scraping/fanta-scraping-main/fanta-scraping/fanta-scraping-main/"
+season_0 = route + "2022-23/2022-23.csv"
+season_1 = route + "2021-22/2021-22.csv"
+season_2 = route + "2020-21/2020-21.csv"
 
 # matches currently played in season_0
 giornate_correnti = 5
@@ -71,7 +71,7 @@ def val_partite(i): # [0, 11]
     gamma = 10
 
     # take partite for each season
-    partite_0 = int(games_0[i])
+    partite_0 = float(games_0[i])
     
     if(df_1.loc[(df_1["Calciatore"] == player_0[i])].size > 0):
         row_1 = df_1.loc[(df_1["Calciatore"] == player_0[i])] # take only current players stats
@@ -85,7 +85,7 @@ def val_partite(i): # [0, 11]
     else:
         partite_2 = 0
 
-    v_partite = (gamma * partite_0 ^2 / giornate_correnti) + (alpha * partite_1 ^2 / 38) + (beta * partite_2 ^2 / 38) / 10
+    v_partite = (gamma * partite_0 * partite_0 / giornate_correnti) + (alpha * partite_1 * partite_1 / 38) + (beta * partite_2 * partite_2 / 38) / 10
 
     return v_partite
 
@@ -105,9 +105,9 @@ def val_fm(i): # [0, 29]
         partite_1 = row_1["Partite Giocate"].values[0]
         fantam_1 = row_1["FM"].values[0]
         fantam_1 = float(fantam_1.replace(",","."))
-        print(fantam_1)
     else:
         fantam_1 = 0
+        partite_1 = 0
 
     if(df_2.loc[(df_2["Calciatore"] == player_0[i])].size > 0):
         row_2 = df_2.loc[(df_2["Calciatore"] == player_0[i])] # take only current players stats
@@ -116,6 +116,7 @@ def val_fm(i): # [0, 29]
         fantam_2 = float(fantam_2.replace(",","."))
     else:
         fantam_2 = 0
+        partite_2 = 0
 
     v_fantam = (gamma * fantam_0 * partite_0 / giornate_correnti) + (alpha * fantam_1 * partite_1 / 38) + (beta * fantam_2 * partite_2 / 38)
 
@@ -128,7 +129,6 @@ def val_mv(i): # [0, 19]
     beta = 0.6
     gamma = 0.3
 
-    # take partite for each season
     mediav_0 = float(mv_0[i].replace(',','.'))
     partite_0 = int(games_0[i])
 
@@ -137,9 +137,9 @@ def val_mv(i): # [0, 19]
         partite_1 = row_1["Partite Giocate"].values[0]
         mediav_1 = row_1["MV"].values[0]
         mediav_1 = float(mediav_1.replace(",","."))
-        print(mediav_1)
     else:
         mediav_1 = 0
+        partite_1 = 0
 
     if(df_2.loc[(df_2["Calciatore"] == player_0[i])].size > 0):
         row_2 = df_2.loc[(df_2["Calciatore"] == player_0[i])] # take only current players stats
@@ -148,54 +148,162 @@ def val_mv(i): # [0, 19]
         mediav_2 = float(mediav_2.replace(",","."))
     else:
         mediav_2 = 0
+        partite_2 = 0
 
     v_mediav = (gamma * mediav_0 * partite_0 / giornate_correnti) + (alpha * mediav_1 * partite_1 / 38) + (beta * mediav_2 * partite_2 / 38)
 
     return v_mediav
 
+def val_rigori(i): # [0, n]
 
-def val_rigori(i):
-    rig_segnati = float(rig[i].split(" / ")[0])
-    rig_totali = float(rig[i].split(" / ")[1])
-    if rig_segnati != 0:
-        val_rig = (rig_totali) * (rig_segnati / rig_totali)
-    elif rig_segnati == 0 and rig_totali == 0:
-        val_rig = 0
-    elif rig_segnati == 0 and rig_totali != 0:
-        val_rig = -rig_totali
+    # constants
+    alpha = 1
+    beta = 0.6
+    gamma = 1
+
+    rig_segnati_0 = float(rig_0[i].split(" / ")[0])
+    rig_totali_0 = float(rig_0[i].split(" / ")[1])
+    # avoid 0/0 division
+    if(rig_totali_0 == 0):
+        rig_totali_0 = 1
+
+    if(df_1.loc[(df_1["Calciatore"] == player_0[i])].size > 0):
+        row_1 = df_1.loc[(df_1["Calciatore"] == player_0[i])] # take only current players stats
+        rigori_1 = row_1["Rigori"].values[0]
+        rig_segnati_1 = float(rigori_1.split(" / ")[0])
+        rig_totali_1 = float(rigori_1.split(" / ")[1])
+        # avoid 0/0 division
+        if(rig_totali_1 == 0):
+            rig_totali_1 = 1
     else:
-        val_rig = 0
-    return val_rig
+        rig_segnati_1 = 0
+        rig_totali_1 = 1
 
-def val_amm(i):
-    giallo = float(amm[i])
-    partite = float(games[i])
-    if giallo != 0 and partite != 0:
-        val_amm = giallo / partite
+    if(df_2.loc[(df_2["Calciatore"] == player_0[i])].size > 0):
+        row_2 = df_2.loc[(df_2["Calciatore"] == player_0[i])] # take only current players stats
+        rigori_2 = row_2["Rigori"].values[0]
+        rig_segnati_2 = float(rigori_2.split(" / ")[0])
+        rig_totali_2 = float(rigori_2.split(" / ")[1])
+        # avoid 0/0 division
+        if(rig_totali_2 == 0):
+            rig_totali_2 = 1
     else:
-        val_amm = 0
-    return -val_amm
+        rig_segnati_2 = 0
+        rig_totali_2 = 1
 
-def val_esp(i):
-    boost_coeff = 2
-    rosso = boost_coeff * float(esp[i])
-    partite = float(games[i])
-    if rosso != 0 and partite != 0:
-        val_esp = rosso / partite
+    v_rig = (gamma * rig_segnati_0 * (rig_segnati_0/rig_totali_0)) + (alpha * rig_segnati_1 * (rig_segnati_1/rig_totali_1)) + (beta * rig_segnati_2 * (rig_segnati_2/rig_totali_2))
+
+    return v_rig
+
+def val_rigori_parati(i): # [0, n]
+    
+    # constants
+    alpha = 1
+
+    rparati_0 = rp_0[i]
+
+    if(df_1.loc[(df_1["Calciatore"] == player_0[i])].size > 0):
+        row_1 = df_1.loc[(df_1["Calciatore"] == player_0[i])] # take only current players stats
+        rparati_1 = row_1["Rigori Parati"].values[0]
     else:
-        val_esp = 0
-    return -val_esp
+        rparati_1 = 0
 
+    if(df_2.loc[(df_2["Calciatore"] == player_0[i])].size > 0):
+        row_2 = df_2.loc[(df_2["Calciatore"] == player_0[i])] # take only current players stats
+        rparati_2 = row_2["Rigori Parati"].values[0]
+    else:
+        rparati_2 = 0
 
+    v_rparati = alpha * (rparati_0 + rparati_1 + rparati_2) 
+
+    return v_rparati
+
+def val_amm(i): # [-n, 0]
+
+    # constants
+    alpha = 0.7
+    beta = 0.5
+    gamma = 0.4
+    role_malus = 1.5
+
+    giallo_0 = float(amm_0[i])
+    partite_0 = float(games_0[i])
+    # avoid 0/0 division
+    if(partite_0 == 0):
+        partite_0 = 1
+
+    if(df_1.loc[(df_1["Calciatore"] == player_0[i])].size > 0):
+        row_1 = df_1.loc[(df_1["Calciatore"] == player_0[i])] # take only current players stats
+        partite_1 = row_1["Partite Giocate"].values[0]
+        giallo_1 = row_1["Ammonizioni"].values[0]
+        giallo_1 = float(giallo_1)
+    else:
+        giallo_1 = 0
+        partite_1 = 1
+
+    if(df_2.loc[(df_2["Calciatore"] == player_0[i])].size > 0):
+        row_2 = df_2.loc[(df_2["Calciatore"] == player_0[i])] # take only current players stats
+        partite_2 = row_2["Partite Giocate"].values[0]
+        giallo_2 = row_2["Ammonizioni"].values[0]
+        giallo_2 = float(giallo_2)
+    else:
+        giallo_2 = 0
+        partite_2 = 1
+
+    if((partite_0 == 0 and giallo_0 == 0) or (partite_1 == 0 and giallo_1 == 0) or(partite_2 == 0 and giallo_2 == 0)):
+        v_amm = 0
+    elif role_0[i] == 'a':
+        v_amm = - role_malus * ((gamma * giallo_0 * giornate_correnti / partite_0) + (alpha * giallo_1 * 38 / partite_1) + (beta * giallo_2 * 38 / partite_2))
+    else:
+        v_amm = - ((gamma * giallo_0 * giornate_correnti / partite_0) + (alpha * giallo_1 * 38 / partite_1) + (beta * giallo_2 * 38 / partite_2))
+
+    return v_amm
+
+def val_esp(i): # [-n, 0]
+
+    # constants
+    alpha = 0.5
+    beta = 0.3
+    gamma = 0.2
+    role_malus = 2
+
+    rosso_0 = float(esp_0[i])
+    partite_0 = float(games_0[i])
+    # avoid 0/0 division
+    if(partite_0 == 0):
+        partite_0 = 1
+
+    if(df_1.loc[(df_1["Calciatore"] == player_0[i])].size > 0):
+        row_1 = df_1.loc[(df_1["Calciatore"] == player_0[i])] # take only current players stats
+        partite_1 = row_1["Partite Giocate"].values[0]
+        rosso_1 = row_1["Espulsioni"].values[0]
+        rosso_1 = float(rosso_1)
+    else:
+        rosso_1 = 0
+        partite_1 = 1
+
+    if(df_2.loc[(df_2["Calciatore"] == player_0[i])].size > 0):
+        row_2 = df_2.loc[(df_2["Calciatore"] == player_0[i])] # take only current players stats
+        partite_2 = row_2["Partite Giocate"].values[0]
+        rosso_2 = row_2["Espulsioni"].values[0]
+        rosso_2 = float(rosso_2)
+    else:
+        rosso_2 = 0
+        partite_2 = 1
+    
+    if((partite_0 == 0 and rosso_0 == 0) or (partite_1 == 0 and rosso_1 == 0) or(partite_2 == 0 and rosso_2 == 0)):
+        v_esp = 0
+    elif role_0[i] == 'a':
+        v_esp = - role_malus * ((gamma * rosso_0 * giornate_correnti / partite_0) + (alpha * rosso_1 * 38 / partite_1) + (beta * rosso_2 * 38 / partite_2))
+    else:
+        v_esp = - ((gamma * rosso_0 * giornate_correnti / partite_0) + (alpha * rosso_1 * 38 / partite_1) + (beta * rosso_2 * 38 / partite_2))
+
+    return v_esp
 
 def val(i):
-    val_rig = val_rigori(i)
-    val_ammo = val_amm(i)
-    val_espu = val_esp(i)
-    val_part = val_partite(i)
-    val_fmp = val_fm(i)
-    val_mvp = val_mv(i)
-    val = val_rig + val_ammo + val_espu + val_part + val_fmp + val_mvp 
+    
+    val = val_partite(i) + val_fm(i) + val_mv(i) + val_rigori(i) + val_rigori_parati(i) + val_amm(i) + val_esp(i) # + val_gs(i) + val_squadra(i)
+    
     return val
 
 def print_report(model):
@@ -204,26 +312,26 @@ def print_report(model):
     costo = bp = bd = bc = ba = num = 0
     selected = {'role':[],'player':[],'team':[], 'games':[], 'fm':[],'cost':[]}
 
-    for i in range(len(df)):
+    for i in range(len(df_0)):
         if decisions[i].value() == 1:
 
-            costo = costo + cost[i]
-            if role[i] == "p":
-                bp = bp + cost[i]
-            if role[i] == "d":
-                bd = bd + cost[i]
-            if role[i] == "c":
-                bc = bc + cost[i]
-            if role[i] == "a":
-                ba = ba + cost[i]
+            costo = costo + cost_0[i]
+            if role_0[i] == "p":
+                bp = bp + cost_0[i]
+            if role_0[i] == "d":
+                bd = bd + cost_0[i]
+            if role_0[i] == "c":
+                bc = bc + cost_0[i]
+            if role_0[i] == "a":
+                ba = ba + cost_0[i]
             num = num + 1
 
-            selected['role'].append(role[i])
-            selected['player'].append(player[i])
-            selected['team'].append(team[i])
-            selected['games'].append(games[i])
-            selected['fm'].append(fm[i])
-            selected['cost'].append(cost[i])
+            selected['role'].append(role_0[i])
+            selected['player'].append(player_0[i])
+            selected['team'].append(team_0[i])
+            selected['games'].append(games_0[i])
+            selected['fm'].append(fm_0[i])
+            selected['cost'].append(cost_0[i])
 
     df_report = pd.DataFrame({'role':selected['role'],
             'player':selected['player'],
@@ -234,7 +342,7 @@ def print_report(model):
     
     df_report = df_report.sort_values(by=['role','cost'], ascending=False)
 
-    filepath = season.split('/')[0]
+    filepath = route + season_0.split('/')[0]
     os.makedirs(filepath, exist_ok=True) 
     filename = filepath + '/team.csv'
     df_report.to_csv(filename)
@@ -256,44 +364,44 @@ model = pulp.LpProblem("Constrained value maximisation", pulp.LpMaximize)
 
 # binary decision: take or not
 decisions = [pulp.LpVariable("x{}".format(i), lowBound=0, upBound=1, cat='Integer')
-             for i in range(len(df))]
+             for i in range(len(df_0))]
 
 
 # OBJECTIVE FUNCTION 
 # value = fm + mv + rig + amm + esp + partite
 
 #model += sum(decisions[i] * (val_fm(i) + val_mv(i) + val_rigori(i) + val_amm(i) + val_esp(i) + val_partite(i)) for i in range(len(df))), "Objective"
-model += sum(decisions[i] * val(i) for i in range(len(df))), "Objective"
+model += sum(decisions[i] * val(i) for i in range(len(df_0))), "Objective"
 
 # CONSTRAINTS
 # budget management
-model += sum(decisions[i] * float(cost[i]) for i in range(len(df))) <= budget
-model += sum(decisions[i] * float(cost[i]) for i in range(len(df)) if role[i] == "p") <= budget_p
-model += sum(decisions[i] * float(cost[i]) for i in range(len(df)) if role[i] == "d") <= budget_d
-model += sum(decisions[i] * float(cost[i]) for i in range(len(df)) if role[i] == "c") <= budget_c
-model += sum(decisions[i] * float(cost[i]) for i in range(len(df)) if role[i] == "a") <= budget_a
+model += sum(decisions[i] * float(cost_0[i]) for i in range(len(df_0))) <= budget
+model += sum(decisions[i] * float(cost_0[i]) for i in range(len(df_0)) if role_0[i] == "p") <= budget_p
+model += sum(decisions[i] * float(cost_0[i]) for i in range(len(df_0)) if role_0[i] == "d") <= budget_d
+model += sum(decisions[i] * float(cost_0[i]) for i in range(len(df_0)) if role_0[i] == "c") <= budget_c
+model += sum(decisions[i] * float(cost_0[i]) for i in range(len(df_0)) if role_0[i] == "a") <= budget_a
 
 # total players
 model += sum(decisions) == num_players
 
 # player for roles
 # 3 portieri di cui 1 titolare
-model += sum(decisions[i] for i in range(len(df)) if role[i] == "p") == 3
-model += sum(decisions[i] for i in range(len(df)) if (games[i] >= 3 and role[i] == "p" and val_fm(i) >= 6)) == 1 
-model += sum(decisions[i] for i in range(len(df)) if (games[i] >= 2 and role[i] == "p")) == 3 
+model += sum(decisions[i] for i in range(len(df_0)) if role_0[i] == "p") == 3
+#model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 3 and role_0[i] == "p" and val_fm(i) >= 6)) == 1 
+#model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 2 and role_0[i] == "p")) == 3 
 
 # 8 difensori di cui 3 difensori forti
-model += sum(decisions[i] for i in range(len(df)) if role[i] == "d") == 8
-model += sum(decisions[i] for i in range(len(df)) if (games[i] >= 2 and role[i] == "d" and val_mv(i) >= 6.2)) == 3
+model += sum(decisions[i] for i in range(len(df_0)) if role_0[i] == "d") == 8
+#model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 2 and role_0[i] == "d" and val_mv(i) >= 6.2)) == 3
 
 # 8 centrocampisti di cui 2 molto forti e 2 ottimi 
-model += sum(decisions[i] for i in range(len(df)) if role[i] == "c") == 8
-model += sum(decisions[i] for i in range(len(df)) if (games[i] >= 2 and role[i] == "c" and val_fm(i) >= 7)) == 2
+model += sum(decisions[i] for i in range(len(df_0)) if role_0[i] == "c") == 8
+#model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 2 and role_0[i] == "c" and val_fm(i) >= 7)) == 2
 #model += sum(decisions[i] for i in range(len(df)) if (games[i] >= 25 and role[i] == "c" and val_fm(i) <= 7 and val_fm(i) >= 6.5)) == 2
 
 # 6 attaccanti di cui 2 forti e 1 buono
-model += sum(decisions[i] for i in range(len(df)) if role[i] == "a") == 6
-model += sum(decisions[i] for i in range(len(df)) if (games[i] >= 2 and role[i] == "a" and val_fm(i) >= 7.5)) == 2
+model += sum(decisions[i] for i in range(len(df_0)) if role_0[i] == "a") == 6
+#model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 2 and role_0[i] == "a" and val_fm(i) >= 7.5)) == 2
 #model += sum(decisions[i] for i in range(len(df)) if (games[i] >= 25 and role[i] == "a" and val_fm(i) <= 7.5 and val_fm(i) > 7)) == 1
 
 # SOLVE and print report
