@@ -405,6 +405,7 @@ def print_report(model):
     print("\ntotal players: " + str(num))
     print("costs: " + str(bp) +"p, "+ str(bd) +"d, "+ str(bc) +"c, "+ str(ba) +"a = "+str(costo))
 
+# PROBLEM FORMULATION
 
 num_players = 3+8+8+6
 budget = 500
@@ -419,10 +420,6 @@ model = pulp.LpProblem("Constrained value maximisation", pulp.LpMaximize)
 # binary decision: take or not
 decisions = [pulp.LpVariable("x{}".format(i), lowBound=0, upBound=1, cat='Integer')
              for i in range(len(df_0))]
-
-
-# OBJECTIVE FUNCTION 
-# value = fm + mv + rig + amm + esp + partite
 
 #model += sum(decisions[i] * (val_fm(i) + val_mv(i) + val_rigori(i) + val_amm(i) + val_esp(i) + val_partite(i)) for i in range(len(df))), "Objective"
 model += sum(decisions[i] * val(i) for i in range(len(df_0))), "Objective"
