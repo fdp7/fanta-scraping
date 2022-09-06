@@ -3,7 +3,7 @@ import pulp
 import os
  
 # creating a data frame
-route = "/home/federico/fanta-scraping/fanta-scraping-main/fanta-scraping/fanta-scraping-main/"
+route = ""#"/home/federico/fanta-scraping/fanta-scraping-main/fanta-scraping/fanta-scraping-main/"
 season_0 = route + "2022-23/2022-23.csv"
 season_1 = route + "2021-22/2021-22.csv"
 season_2 = route + "2020-21/2020-21.csv"
@@ -14,6 +14,7 @@ giornate_correnti = 5
 # take season_0 stats
 df_0 = pd.read_csv(season_0)
 team_0 = df_0["Squadra"]
+class_0 = df_0["Classifica"]
 fm_0 = df_0["FM"]
 player_0 = df_0["Calciatore"]
 role_0 = df_0["Ruolo"]
@@ -32,6 +33,7 @@ cost_0 = df_0['ExpectedCost_1000'].apply(lambda x: float(x)/2) # take expected c
 df_1 = pd.read_csv(season_1)
 df_1 = df_1.loc[df_1["Calciatore"].isin(df_0["Calciatore"])] # take only current players stats
 team_1 = df_1["Squadra"]
+class_1 = df_1["Classifica"]
 fm_1 = df_1["FM"]
 player_1 = df_1["Calciatore"]
 role_1 = df_1["Ruolo"]
@@ -49,6 +51,7 @@ qa_1 = df_1["QA"].apply(lambda x: float(x))
 df_2 = pd.read_csv(season_2)
 df_2 = df_2.loc[df_2["Calciatore"].isin(df_0["Calciatore"])] # take only current players stats
 team_2 = df_2["Squadra"]
+class_2 = df_2["Classifica"]
 fm_2 = df_2["FM"]
 player_2 = df_2["Calciatore"]
 role_2 = df_2["Ruolo"]
@@ -218,6 +221,37 @@ def val_rigori_parati(i): # [0, n]
 
     return v_rparati
 
+def val_gol_subiti(i):
+    
+    # constants [-n,0]
+    alpha = 10
+
+    gsub_0 = gs_0[i]
+    partite_0 = games_0[i]
+
+    if(df_1.loc[(df_1["Calciatore"] == player_0[i])].size > 0):
+        row_1 = df_1.loc[(df_1["Calciatore"] == player_0[i])] # take only current players stats
+        gsub_1 = row_1["Gol Subiti"].values[0]
+        partite_1 = row_1["Partite Giocate"].values[0]
+    else:
+        gsub_1 = 0
+        partite_1 = 0
+
+    if(df_2.loc[(df_2["Calciatore"] == player_0[i])].size > 0):
+        row_2 = df_2.loc[(df_2["Calciatore"] == player_0[i])] # take only current players stats
+        gsub_2 = row_2["Gol Subiti"].values[0]
+        partite_2 = row_2["Partite Giocate"].values[0]
+    else:
+        gsub_2 = 0
+        partite_2 = 0
+
+    if(partite_0 == partite_1 == partite_2 == 0):
+        partite_0 = 1 
+
+    v_gsub = - alpha * (gsub_0 + gsub_1 + gsub_2) / (partite_0 + partite_1 + partite_2)
+
+    return v_gsub
+
 def val_amm(i): # [-n, 0]
 
     # constants
@@ -300,10 +334,30 @@ def val_esp(i): # [-n, 0]
 
     return v_esp
 
+def val_squadra(i): # [1.5, 7.5]
+
+    # constants
+    gamma = 1.5
+
+    if class_0[i] <= 4:
+        classifica_0 = 5
+    elif class_0[i] >= 5 and class_0[i] <= 7:
+        classifica_0 = 4
+    elif class_0[i] >= 8 and class_0[i] <= 12:
+        classifica_0 = 3
+    elif class_0[i] >= 13 and class_0[i] <= 17:
+        classifica_0 = 2
+    elif class_0[i] >= 18 and class_0[i] <= 20:
+        classifica_0 = 1
+    
+    v_squadra = (gamma * classifica_0)
+
+    return v_squadra
+
 def val(i):
     
-    val = val_partite(i) + val_fm(i) + val_mv(i) + val_rigori(i) + val_rigori_parati(i) + val_amm(i) + val_esp(i) # + val_gs(i) + val_squadra(i)
-    
+    val = val_partite(i) + val_fm(i) + val_mv(i) + val_rigori(i) + val_rigori_parati(i) + val_amm(i) + val_esp(i) + val_squadra(i) + val_gol_subiti(i) 
+
     return val
 
 def print_report(model):

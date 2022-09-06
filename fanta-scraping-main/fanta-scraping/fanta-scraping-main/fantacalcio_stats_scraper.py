@@ -25,6 +25,22 @@ def get_seasons():
 
     return seasons
 
+# Get Rankings of teams
+def get_ranks(season):
+    
+    # shuffle headers
+    ua = UserAgent()
+    ua.update()
+    headers = {'User-Agent': ua.random}
+    
+    url = 'https://www.transfermarkt.it/serie-a/formtabelle/wettbewerb/IT1?saison_id=20'+str(season)+'&min=1&max=38'
+    page = requests.get(url, headers=headers)
+    soup = BeautifulSoup(page.text, 'html.parser')
+
+    ranks_dictionary = scrape_ranks(soup)
+    
+    return ranks_dictionary 
+
 # Get stats for each player for each season
 def get_players_stats(seasons):
 
@@ -32,7 +48,7 @@ def get_players_stats(seasons):
         
         # rename season 
         season = season.replace('/','-').split()
-        
+
         # shuffle headers
         ua = UserAgent()
         ua.update()
@@ -51,9 +67,16 @@ def get_players_stats(seasons):
         page = requests.get(url, headers=headers)
         soup = BeautifulSoup(page.text, 'html.parser')
         cost_dictionary = scrape_costs(soup)
+
+        s = season[1].split("-") 
+        year = s[1]
+        
+        ranks_dictionary = get_ranks(year)
+        print(colored("\nScraping Ranking of " + season[1] + " season\n",'green'))
+        print(ranks_dictionary)
         
         # save stats
-        save(season, stats_dictionary, cost_dictionary)
+        save(season, stats_dictionary, cost_dictionary, ranks_dictionary)
 
 # Stats scraping
 def scrape_stats(soup):
@@ -95,6 +118,7 @@ def scrape_stats(soup):
 
     return stats_dictionary
 
+# Costs scraping
 def scrape_costs(soup):
     # prepare dictionary
     cost_dictionary = {'name':[], 'qa':[], 'expected_cost_1000':[]}
@@ -114,8 +138,24 @@ def scrape_costs(soup):
 
     return cost_dictionary
 
+# Team rankings scraping
+def scrape_ranks(soup):
+
+    table = soup.find(class_="responsive-table")
+    
+    ranks_dictionary = {'team':[], 'rank':[]}
+    for row in table.findAll('table')[0].tbody.findAll('tr'):
+        rank = row.findAll('td')[0].text.strip()
+        team = row.findAll('td')[2].text.strip()
+        team = str(team[0:3]).upper()
+
+        ranks_dictionary['team'].append(team)
+        ranks_dictionary['rank'].append(rank)
+
+    return ranks_dictionary
+
 # Save stats to csv
-def save(season, stats_dictionary, cost_dictionary):
+def save(season, stats_dictionary, cost_dictionary, ranks_dictionary):
     
     # create data frame
     df_player = pd.DataFrame({'Calciatore':stats_dictionary['name'],
@@ -136,7 +176,13 @@ def save(season, stats_dictionary, cost_dictionary):
                     'QA':cost_dictionary['qa'],
                     'ExpectedCost_1000':cost_dictionary['expected_cost_1000']})
     
+    df_ranks = pd.DataFrame({'Squadra':ranks_dictionary['team'],
+                    'Classifica':ranks_dictionary['rank']})
+
     df = df_player.merge(df_cost, how="left", on="Calciatore")
+
+    df = df.merge(df_ranks, how="left", on="Squadra")
+
     print(df.head()) 
 
     # create folder and save                    
