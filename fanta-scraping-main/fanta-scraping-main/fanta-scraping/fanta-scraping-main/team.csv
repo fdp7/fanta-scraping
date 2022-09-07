@@ -1,26 +1,26 @@
 ,role,player,team,games,fm,cost
-23,p,Consigli,SAS,4,"4,75",11.5
-24,p,Skorupski,BOL,4,"4,5",10.0
-20,p,Vicario,EMP,4,"5,5",8.5
-12,d,Skriniar,INT,4,"5,75",25.0
-1,d,Ibanez,ROM,4,"7,25",8.5
-2,d,Rodrigo Becao,UDI,4,"7,25",8.5
-19,d,Ferrari G.,SAS,4,"5,5",7.5
-8,d,Rodriguez R.,TOR,4,"6,25",6.5
-16,d,Marusic,LAZ,4,"5,62",6.5
-22,d,Augello,SAM,4,"5,38",6.5
-17,d,Nikolaou,SPE,4,"5,62",4.0
-0,c,Zielinski,NAP,4,"7,75",40.0
-3,c,Felipe Anderson,LAZ,4,"6,88",31.5
-6,c,Candreva,SAL,4,"6,38",17.5
-7,c,Lazovic,VER,4,"6,25",15.0
-15,c,Tameze,VER,4,"5,75",12.0
-10,c,Soriano,BOL,4,"5,88",10.5
-18,c,Gyasi,SPE,4,"5,62",10.0
-21,c,Marin,EMP,4,"5,5",6.5
-4,a,Pinamonti,SAS,4,"6,62",60.0
-13,a,Caprari,MON,4,"5,75",41.0
-5,a,Deulofeu,UDI,4,"6,5",40.0
-9,a,Dzeko,INT,4,"6,12",35.0
-14,a,Caputo,SAM,4,"5,75",34.0
-11,a,Quagliarella,SAM,4,"5,75",7.5
+21,p,Silvestri,UDI,5,"5,5",15.5
+24,p,Consigli,SAS,5,"5,0",11.5
+7,d,Hernandez T.,MIL,5,"6,6",42.0
+20,d,Marusic,LAZ,5,"5,5",6.5
+19,d,Bereszynski,SAM,4,"5,5",5.0
+18,d,Gyomber,SAL,5,"5,5",2.5
+12,d,Zortea,ATA,3,"5,83",2.0
+13,d,Gallo,LEC,4,"5,75",1.5
+17,d,Radovanovic,SAL,1,"5,5",1.5
+4,d,Masina,UDI,4,"6,75",1.0
+11,d,Ballo-Toure',MIL,1,"6,0",1.0
+23,d,Ranocchia,MON,1,"5,0",1.0
+1,c,Zielinski,NAP,5,"7,7",43.5
+9,c,Mkhitaryan,INT,2,"6,0",19.0
+2,c,Ricci S.,TOR,3,"7,0",9.0
+5,c,Elmas,NAP,5,"6,7",7.0
+8,c,Coulibaly L.,SAL,4,"6,25",7.0
+3,c,Lovric,UDI,5,"6,9",6.5
+15,c,Saelemaekers,MIL,5,"5,7",6.0
+0,a,Vlahovic,JUV,4,"9,75",195.0
+16,a,Muriel,ATA,3,"5,67",35.0
+6,a,Caputo,SAM,5,"6,6",34.5
+22,a,Barrow,BOL,3,"5,5",11.5
+14,a,Quagliarella,SAM,5,"5,7",7.5
+10,a,Boga,ATA,1,"6,0",6.5

@@ -3,7 +3,7 @@ import pulp
 import os
  
 # creating a data frame
-route = ""#"/home/federico/fanta-scraping/fanta-scraping-main/fanta-scraping/fanta-scraping-main/"
+route = "/home/federico/fanta-scraping/fanta-scraping-main/fanta-scraping-main/fanta-scraping/fanta-scraping-main/"
 season_0 = route + "2022-23/2022-23.csv"
 season_1 = route + "2021-22/2021-22.csv"
 season_2 = route + "2020-21/2020-21.csv"
@@ -386,6 +386,7 @@ def val_squadra(i): # [1.5, 7.5]
 
 
 valori = {'id':[], 'val':[], 'v_par':[], 'v_fm':[], 'v_mv':[], 'v_r':[], 'v_rp':[], 'v_amm':[], 'v_esp':[], 'v_s':[], 'v_gs':[], }
+
 def val(i): # [0, 42]
     
     v_par = val_partite(i)
@@ -428,7 +429,6 @@ def val(i): # [0, 42]
         df.to_csv(filename)
 
     return val
-
 
 def print_report(model):
     model.solve()
@@ -479,10 +479,10 @@ def print_report(model):
 
 num_players = 3+8+8+6
 budget = 500
-budget_p = 10/100 * budget
-budget_d = 15/100 * budget
-budget_c = 30/100 * budget
-budget_a = budget - budget_p - budget_d - budget_c 
+budget_p = 40 #10/100 * budget
+budget_d = 60 #15/100 * budget
+budget_c = 120 #30/100 * budget
+budget_a = 280 #budget - budget_p - budget_d - budget_c 
 
 # maximization problem
 model = pulp.LpProblem("Constrained value maximisation", pulp.LpMaximize)
@@ -508,20 +508,22 @@ model += sum(decisions) == num_players
 # player for roles
 # 3 portieri di cui 1 titolare
 model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "p" and cost_0[i] >= 1)) == 3
-model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "p" and val_partite(i) >= 5)) == 1 
-#model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 2 and role_0[i] == "p")) == 3 
+model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "p" and val_partite(i) >= 5 and cost_0[i] < 30)) == 3
 
 # 8 difensori di cui 3 difensori forti
-model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "d" and cost_0[i] >= 1)) == 8
-model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 4 and role_0[i] == "d" and val_mv(i) >= 7)) == 5
+model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "d" and cost_0[i] >= 1 and games_0[i] >= 1)) == 8
+model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "d" and cost_0[i] >= 1 and val_squadra(i) >= 4 and games_0[i] >= 3)) == 6
+model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 4 and role_0[i] == "d" and val_mv(i) >= 9)) == 3
+model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "d" and val_fm(i) >= 11)) == 1
 
 # 8 centrocampisti di cui 2 molto forti e 2 ottimi 
 model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "c" and cost_0[i] >= 1)) == 8
-model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "c" and val_fm(i) >= 8)) == 3
+model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "c" and val_fm(i) >= 10)) == 3
 model += sum(decisions[i] for i in range(len(df_0)) if (games_0[i] >= 3 and role_0[i] == "c" and val_fm(i) >= 7)) == 4
 
 # 6 attaccanti di cui 2 forti e 1 buono
 model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "a" and cost_0[i] >= 1)) == 6
+model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "a" and val_fm(i) >= 13)) == 1
 model += sum(decisions[i] for i in range(len(df_0)) if (role_0[i] == "a" and val_fm(i) >= 11)) == 2
 
 # SOLVE and print report
